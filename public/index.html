@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>To-Do List</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Lista de Tareas</h1>
+  <form id="task-form">
+    <input type="text" id="task" placeholder="Escribe una tarea" required>
+    <button type="submit">Agregar</button>
+  </form>
+  <ul id="task-list"></ul>
+
+  <script>
+    const form = document.getElementById('task-form');
+    const list = document.getElementById('task-list');
+
+    async function loadTasks() {
+      const res = await fetch('/api/tareas');
+      const tareas = await res.json();
+      list.innerHTML = '';
+      tareas.forEach(t => {
+        const li = document.createElement('li');
+        li.textContent = t.tarea;
+        li.style.textDecoration = t.completado ? 'line-through' : 'none';
+        li.addEventListener('click', async () => {
+          await fetch(`/api/tareas/${t.id}`, { method: 'PUT' });
+          loadTasks();
+        });
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'Eliminar';
+        delBtn.onclick = async () => {
+          await fetch(`/api/tareas/${t.id}`, { method: 'DELETE' });
+          loadTasks();
+        };
+        li.appendChild(delBtn);
+        list.appendChild(li);
+      });
+    }
+
+    form.addEventListener('submit', async e => {
+      e.preventDefault();
+      const tarea = document.getElementById('task').value;
+      await fetch('/api/tareas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tarea })
+      });
+      form.reset();
+      loadTasks();
+    });
+
+    loadTasks();
+  </script>
+</body>
+</html>
